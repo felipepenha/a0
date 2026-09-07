@@ -51,7 +51,12 @@ def send_message(host="http://localhost:50001", prompt="Hello", api_key="", max_
             return data
     except urllib.error.HTTPError as e:
         error_body = e.read().decode("utf-8", errors="ignore")
-        print(f"❌ HTTP Error {e.code}: {error_body}", file=sys.stderr)
+        if "AuthenticationError" in error_body or "401" in error_body:
+            print("❌ LLM API Key Error: Agent Zero needs a valid LLM API key to run tasks.", file=sys.stderr)
+            print("   Please configure your API key (OPENAI_API_KEY, OPENROUTER_API_KEY, ANTHROPIC_API_KEY, or GEMINI_API_KEY)", file=sys.stderr)
+            print("   either in 'usr/.env' or via the Agent Zero Web UI under Settings -> Models.", file=sys.stderr)
+        else:
+            print(f"❌ HTTP Error {e.code}: {error_body}", file=sys.stderr)
         sys.exit(1)
     except Exception as e:
         print(f"❌ Request failed: {e}", file=sys.stderr)
