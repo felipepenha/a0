@@ -46,6 +46,6 @@ echo ""
 
 PROMPT="Inspect the main HTTP response headers and public configuration files (such as robots.txt and sitemap.xml) at http://vulnerable_container:3000. Check for the presence of standard security headers (like Content-Security-Policy, X-Frame-Options, and Strict-Transport-Security) and summarize the findings passively."
 
-echo "Sending prompt to Agent Zero session via API client (send_agent_prompt.py)..."
-python3 send_agent_prompt.py "$PROMPT" "http://localhost:50001" 2>&1 | tee "$LOG_FILE" | tee "$LATEST_LOG"
+echo "Sending prompt to Agent Zero session via API client (prompt.py)..."
+python3 prompt.py "$PROMPT" "http://localhost:50001" 2>&1 | tee "$LOG_FILE" | tee "$LATEST_LOG"
 
