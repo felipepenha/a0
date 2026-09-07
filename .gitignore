@@ -1,0 +1,7 @@
+backup
+*.zip
+.env
+docs/
+backup/
+usr/
+.DS_Store
