@@ -3,5 +3,6 @@ backup
 .env
 docs/
 backup/
+logs/
 usr/
 .DS_Store
