@@ -22,3 +22,15 @@ podman build -t agent-zero-local:ready .
 
 echo "Starting agent0 container..."
 podman run -d --name attacker --net sec_test_net -p 50001:80 -v "$(pwd)/usr:/a0/usr:Z" agent-zero-local:ready
+
+echo ""
+echo "--------------------------------------------------------"
+echo "✅ Security Attack Sandbox is up and running!"
+echo "--------------------------------------------------------"
+echo "Target App (Juice Shop): http://localhost:8080"
+echo "Agent Zero UI:           http://localhost:50001"
+echo ""
+echo "Inside Agent Zero Web UI, target the container using:"
+echo "    http://vulnerable_container:3000"
+echo "--------------------------------------------------------"
+echo ""
