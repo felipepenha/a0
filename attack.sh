@@ -20,12 +20,51 @@ podman run -d --name vulnerable_container --net sec_test_net -p 8080:3000 bkimmi
 mkdir -p "$(pwd)/usr"
 mkdir -p "$(pwd)/logs"
 
-# Run the agent0 container (using patched image with persistent volume)
+# --- Ollama Setup & Configuration ---
+OLLAMA_PORT=11434
+OLLAMA_MODEL_NAME="gpt-oss:20b"
+
+# Dynamically determine the gateway IP of the Podman network
+HOST_GATEWAY_IP=$(podman network inspect podman -f '{{(index .Subnets 0).Gateway}}' 2>/dev/null || echo "")
+
+if [ -z "$HOST_GATEWAY_IP" ]; then
+    echo "Warning: Could not determine Podman gateway IP. Falling back to host.docker.internal."
+    OLLAMA_INTERNAL_URL="http://host.docker.internal:$OLLAMA_PORT"
+    ADD_HOST_FLAG="--add-host host.docker.internal:host-gateway"
+else
+    OLLAMA_INTERNAL_URL="http://$HOST_GATEWAY_IP:$OLLAMA_PORT"
+    ADD_HOST_FLAG=""
+fi
+
+# Ensure required Ollama model is available
+if ! ollama list 2>/dev/null | grep -q "$OLLAMA_MODEL_NAME"; then
+    echo "Pulling required Ollama model ($OLLAMA_MODEL_NAME)..."
+    ollama pull "$OLLAMA_MODEL_NAME" || true
+fi
+
+# Start background Ollama server if not already running
+if ! lsof -i tcp:${OLLAMA_PORT} >/dev/null 2>&1; then
+    echo "Starting local Ollama server on 0.0.0.0:${OLLAMA_PORT}..."
+    export OLLAMA_HOST="0.0.0.0:$OLLAMA_PORT"
+    ollama serve &
+    sleep 3
+fi
+
+# Run the agent0 container (configured to use local Ollama instance)
 echo "Building patched Agent Zero image..."
 podman build -t agent-zero-local:ready .
 
-echo "Starting Agent Zero container..."
-podman run -d --name attacker --net sec_test_net -p 50001:80 -v "$(pwd)/usr:/a0/usr:Z" agent-zero-local:ready
+echo "Starting Agent Zero container (configured for local Ollama)..."
+podman run -d \
+    --name attacker \
+    --net sec_test_net \
+    ${ADD_HOST_FLAG} \
+    -p 50001:80 \
+    -v "$(pwd)/usr:/a0/usr:Z" \
+    -e OLLAMA_API_BASE="$OLLAMA_INTERNAL_URL" \
+    -e MODEL_NAME="$OLLAMA_MODEL_NAME" \
+    -e CHAT_MODEL="$OLLAMA_MODEL_NAME" \
+    agent-zero-local:ready
 
 echo "Waiting for Agent Zero container services to initialize..."
 sleep 10
