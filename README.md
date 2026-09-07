@@ -7,29 +7,35 @@
 > [!NOTE]
 > These startup scripts are **independent and mutually exclusive**. You do **not** run them in sequence. Simply choose **one** script to run based on your desired use case. Each script automatically cleans up previous containers before launching its own environment.
 
-#### 1. Standard Standalone Run (`run.sh`)
+#### 1. Standard Standalone Run (`run.sh` or `make run`)
 
 Launches the patched Agent Zero container bound to port `8080`:
 
 ```bash
+make run
+# or
 ./run.sh
 ```
 * **URL:** `http://localhost:8080`
 
-#### 2. Local Ollama LLM Integration (`ollama.sh`)
+#### 2. Local Ollama LLM Integration (`ollama.sh` or `make ollama`)
 
 Starts a background Ollama server, verifies model availability (`gpt-oss:20b`), dynamically resolves network gateway routing, and launches Agent Zero bound to port `50001`:
 
 ```bash
+make ollama
+# or
 ./ollama.sh
 ```
 * **URL:** `http://localhost:50001`
 
-#### 3. Security / Attack Sandbox (`attack.sh`)
+#### 3. Security / Attack Sandbox (`attack.sh` or `make attack`)
 
 Creates an isolated bridge network (`sec_test_net`), deploys OWASP Juice Shop (`bkimminich/juice-shop` on port `8080`), and starts Agent Zero as an attacker container on port `50001`:
 
 ```bash
+make attack
+# or
 ./attack.sh
 ```
 * **Juice Shop Target URL:** `http://localhost:8080`
