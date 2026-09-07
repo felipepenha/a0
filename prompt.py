@@ -8,18 +8,20 @@ import subprocess
 
 def get_api_key():
     """Retrieve the API key dynamically from the running Podman container."""
-    try:
-        cmd = [
-            "podman", "exec", "attacker",
-            "/opt/venv-a0/bin/python", "-c",
-            "import sys; sys.path.insert(0, '/a0'); from helpers import settings; print(settings.get_settings().get('mcp_server_token', ''))"
-        ]
-        result = subprocess.run(cmd, capture_output=True, text=True, check=True)
-        token = result.stdout.strip()
-        if token:
-            return token
-    except Exception as e:
-        print(f"Warning: Could not fetch API token dynamically via podman: {e}", file=sys.stderr)
+    candidate_containers = ["attacker", "agent0-ollama-runner", "agent-zero-local"]
+    for container in candidate_containers:
+        try:
+            cmd = [
+                "podman", "exec", container,
+                "/opt/venv-a0/bin/python", "-c",
+                "import sys; sys.path.insert(0, '/a0'); from helpers import settings; print(settings.get_settings().get('mcp_server_token', ''))"
+            ]
+            result = subprocess.run(cmd, capture_output=True, text=True, check=True)
+            token = result.stdout.strip()
+            if token:
+                return token
+        except Exception:
+            continue
 
     return os.environ.get("AGENT0_API_KEY", "")
 

@@ -24,17 +24,22 @@ mkdir -p "$(pwd)/logs"
 OLLAMA_PORT=11434
 OLLAMA_MODEL_NAME="gpt-oss:20b"
 
-# Dynamically determine the gateway IP of the Podman network
-HOST_GATEWAY_IP=$(podman network inspect podman -f '{{(index .Subnets 0).Gateway}}' 2>/dev/null || echo "")
+# Dynamically determine host IP for Ollama reachability from Podman containers
+HOST_IP=$(podman run --rm agent-zero-local:ready python3 -c "import socket; print(socket.gethostbyname('host.containers.internal'))" 2>/dev/null || echo "")
 
-if [ -z "$HOST_GATEWAY_IP" ]; then
-    echo "Warning: Could not determine Podman gateway IP. Falling back to host.docker.internal."
-    OLLAMA_INTERNAL_URL="http://host.docker.internal:$OLLAMA_PORT"
-    ADD_HOST_FLAG="--add-host host.docker.internal:host-gateway"
-else
-    OLLAMA_INTERNAL_URL="http://$HOST_GATEWAY_IP:$OLLAMA_PORT"
-    ADD_HOST_FLAG=""
+if [ -z "$HOST_IP" ]; then
+    HOST_IP="192.168.127.254"
 fi
+
+OLLAMA_INTERNAL_URL="http://${HOST_IP}:$OLLAMA_PORT"
+ADD_HOST_FLAG="--add-host host.docker.internal:${HOST_IP}"
+echo "Using host gateway IP for Ollama URL: $OLLAMA_INTERNAL_URL"
+
+# Ensure model_config plugin directory exists and set Ollama provider for both chat & utility models
+mkdir -p "$(pwd)/usr/plugins/_model_config"
+sed -e "s|\${OLLAMA_MODEL_NAME}|$OLLAMA_MODEL_NAME|g" \
+    -e "s|\${OLLAMA_INTERNAL_URL}|$OLLAMA_INTERNAL_URL|g" \
+    model_config.json.template > "$(pwd)/usr/plugins/_model_config/config.json"
 
 # Ensure required Ollama model is available
 if ! ollama list 2>/dev/null | grep -q "$OLLAMA_MODEL_NAME"; then
