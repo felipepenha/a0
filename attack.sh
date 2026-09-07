@@ -51,6 +51,7 @@ fi
 if ! lsof -i tcp:${OLLAMA_PORT} >/dev/null 2>&1; then
     echo "Starting local Ollama server on 0.0.0.0:${OLLAMA_PORT}..."
     export OLLAMA_HOST="0.0.0.0:$OLLAMA_PORT"
+    export OLLAMA_CONTEXT_LENGTH=32768
     ollama serve &
     sleep 3
 fi
