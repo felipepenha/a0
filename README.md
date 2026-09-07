@@ -1,5 +1,16 @@
 # Agent Zero
 
+## Prerequisites & Requirements
+
+Before running the launcher commands, ensure your environment meets the following requirements:
+
+* **Podman** (or Docker): Required to build and run container images (`agent-zero-local:ready`, `bkimminich/juice-shop`). Check: `podman --version`
+* **Ollama** (Required for `make ollama`): Required for offline/local LLM execution without cloud API keys. Download: [https://ollama.com](https://ollama.com) (or `brew install ollama`). Check: `ollama --version`
+* **Python 3.10+ & uv**: Required for host automation scripts (`prompt.py`). Managed via `pyproject.toml` and `uv`.
+* **Make**: Required for executing Makefile shortcuts (`make run`, `make ollama`, `make attack`).
+
+---
+
 ## Running Agent Zero & Data Persistence
 
 ### Launching the Container

@@ -43,29 +43,10 @@ fi
 # --- 1. Cleanup and Prerequisite Checks ---
 echo "--- 1. Stopping any existing Ollama servers and Agent-Zero containers..."
 
-# Stop and remove any previously running agent0 container forcefully
-podman stop -t 5 agent0-ollama-runner 2>/dev/null || true
-podman rm -f agent0-ollama-runner 2>/dev/null || true
-echo "Previous agent0 container removed."
-
-# Attempt to kill any process using the Ollama port
-echo "Killing processes on OLLAMA port ${OLLAMA_PORT}..."
-if command -v fuser &> /dev/null; then
-    fuser -k -n tcp $OLLAMA_PORT 2>/dev/null || true
-else
-    OLLAMA_PID_TO_KILL=$(lsof -i tcp:${OLLAMA_PORT} -t 2>/dev/null || echo "")
-    [ ! -z "$OLLAMA_PID_TO_KILL" ] && kill -9 "$OLLAMA_PID_TO_KILL" 2>/dev/null || true
-fi
-
-# Attempt to kill any process using the Agent-Zero host port
-echo "Killing processes on AGENT0_HOST_PORT ${AGENT0_HOST_PORT}..."
-if command -v fuser &> /dev/null; then
-    fuser -k -n tcp $AGENT0_HOST_PORT 2>/dev/null || true
-else
-    AGENT0_PID_TO_KILL=$(lsof -i tcp:${AGENT0_HOST_PORT} -t 2>/dev/null || echo "")
-    [ ! -z "$AGENT0_PID_TO_KILL" ] && kill -9 "$AGENT0_PID_TO_KILL" 2>/dev/null || true
-fi
-echo "Existing processes cleared if running."
+# Stop and remove any previously running agent0 containers forcefully
+podman stop -t 5 agent0-ollama-runner attacker 2>/dev/null || true
+podman rm -f agent0-ollama-runner attacker 2>/dev/null || true
+echo "Previous agent0 containers removed."
 
 # --- 1.5. Ensure the LLM model is pulled ---
 echo -e "\n--- 1.5. Checking and pulling the required LLM model (${OLLAMA_MODEL_NAME}) ---"
@@ -81,36 +62,15 @@ else
 fi
 
 
-# --- 2. Start Ollama Server (CRITICAL FIX) ---
-echo -e "\n--- 2. Starting Ollama server, explicitly binding to 0.0.0.0:${OLLAMA_PORT}..."
-
-# Export OLLAMA_HOST to ensure the background process binds correctly
-export OLLAMA_HOST="0.0.0.0:$OLLAMA_PORT"
-ollama serve &
-
-# Capture the PID of the background Ollama process
-OLLAMA_PID=$!
-echo "Ollama started in the background with PID: ${OLLAMA_PID}"
-
-# Give Ollama a moment to initialize and listen on the port
-echo "Waiting 5 seconds for Ollama to become ready..."
-sleep 5
-
-# --- Validation: Check if Ollama is listening ---
-echo "Checking if Ollama is listening on 0.0.0.0:${OLLAMA_PORT}..."
-if command -v ss &> /dev/null; then
-    LISTEN_CHECK_CMD="ss -tuln"
+# --- 2. Ensure Ollama Server is Listening ---
+if lsof -i tcp:${OLLAMA_PORT} >/dev/null 2>&1; then
+    echo "Ollama is already running and listening on port ${OLLAMA_PORT}."
 else
-    LISTEN_CHECK_CMD="netstat -tuln"
+    echo -e "\n--- 2. Starting Ollama server, binding to 0.0.0.0:${OLLAMA_PORT}..."
+    export OLLAMA_HOST="0.0.0.0:$OLLAMA_PORT"
+    ollama serve &
+    sleep 3
 fi
-
-if ! $LISTEN_CHECK_CMD | grep -q "LISTEN.*:${OLLAMA_PORT}"; then
-    echo -e "\n❌ ERROR: Ollama server (PID: ${OLLAMA_PID}) failed to bind to port ${OLLAMA_PORT}."
-    echo "    -> Please check for critical errors in the Ollama process."
-    kill -9 "$OLLAMA_PID" 2>/dev/null || true # Kill the failed Ollama process
-    exit 1
-fi
-echo "Ollama is confirmed listening."
 
 
 # --- 3. Run Agent-Zero Container ---
