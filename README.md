@@ -4,21 +4,14 @@
 
 Before running the launcher commands, ensure your environment meets the following requirements:
 
-* **Podman** (or Docker): Required to build and run container images (`agent-zero-local:ready`, `bkimminich/juice-shop`). Check: `podman --version`
-* **Ollama** (Required for `make ollama`): Required for offline/local LLM execution without cloud API keys. Download: [https://ollama.com](https://ollama.com) (or `brew install ollama`). Check: `ollama --version`
-* **Python 3.10+ & uv**: Required for host automation scripts (`prompt.py`). Managed via `pyproject.toml` and `uv`.
-* **Make**: Required for executing Makefile shortcuts (`make run`, `make ollama`, `make attack`).
+* **Podman** (or Docker): Required to build and run container image(`agent-zero-local:ready`). Check: `podman --version`
+* **Make**: Required for executing Makefile shortcuts (`make run`).
 
 ---
 
 ## Running Agent Zero & Data Persistence
 
-### Launching the Container
-
-> [!NOTE]
-> These launch targets are **independent and mutually exclusive**. You do **not** run them in sequence. Simply choose **one** command to run based on your desired use case. Each target automatically cleans up previous containers before launching its own environment.
-
-#### 1. Standard Standalone Run (`make run`)
+### Standard Standalone Run (`make run`)
 
 Launches the patched Agent Zero container bound to port `8080`:
 
@@ -26,26 +19,6 @@ Launches the patched Agent Zero container bound to port `8080`:
 make run
 ```
 * **URL:** `http://localhost:8080`
-
-#### 2. Local Ollama LLM Integration (`make ollama`)
-
-Starts a background Ollama server, verifies model availability (`gpt-oss:20b`), dynamically resolves network gateway routing, and launches Agent Zero bound to port `50001`:
-
-```bash
-make ollama
-```
-* **URL:** `http://localhost:50001`
-
-#### 3. Security Audit Sandbox (`make attack`)
-
-Creates an isolated bridge network (`sec_test_net`), deploys OWASP Juice Shop (`bkimminich/juice-shop` on port `8080`), and starts Agent Zero on port `50001` configured with Option 2 (passive security header & metadata inspection):
-
-```bash
-make attack
-```
-* **Juice Shop Target URL:** `http://localhost:8080`
-* **Agent Zero UI:** `http://localhost:50001`
-* **Option 2 Prompt:** Inspects HTTP response headers (CSP, HSTS, X-Frame-Options), `robots.txt`, and `sitemap.xml` passively at `http://vulnerable_container:3000`.
 
 ### How Data Persistence Works
 
