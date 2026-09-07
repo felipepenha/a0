@@ -27,86 +27,25 @@ podman build -t agent-zero-local:ready .
 echo "Starting Agent Zero container..."
 podman run -d --name attacker --net sec_test_net -p 50001:80 -v "$(pwd)/usr:/a0/usr:Z" agent-zero-local:ready
 
-echo "Waiting for target container to become ready..."
-sleep 3
+echo "Waiting for Agent Zero container services to initialize..."
+sleep 10
 
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
-LOG_FILE="$(pwd)/logs/audit_report_${TIMESTAMP}.log"
+LOG_FILE="$(pwd)/logs/agent_session_${TIMESTAMP}.log"
 LATEST_LOG="$(pwd)/logs/latest.log"
 
 echo ""
 echo "--------------------------------------------------------"
-echo "✅ Security Sandbox (attack.sh) is up and running!"
+echo "✅ Agent Zero Container is up and running!"
 echo "--------------------------------------------------------"
 echo "Target App (Juice Shop): http://localhost:8080"
-echo "Agent Zero UI:           http://localhost:50001"
+echo "Agent Zero Web UI:       http://localhost:50001"
 echo "Log File Output:        $LOG_FILE"
 echo "--------------------------------------------------------"
 echo ""
 
-# Perform passive security header audit, output to screen and save log
-python3 -c "
-import urllib.request
-import urllib.error
-import sys
+PROMPT="Inspect the main HTTP response headers and public configuration files (such as robots.txt and sitemap.xml) at http://vulnerable_container:3000. Check for the presence of standard security headers (like Content-Security-Policy, X-Frame-Options, and Strict-Transport-Security) and summarize the findings passively."
 
-target_url = 'http://localhost:8080'
-
-print('========================================================')
-print('  PASSIVE SECURITY HEADER & METADATA AUDIT REPORT')
-print(f'  Target: {target_url}')
-print('========================================================\n')
-
-print('[+] Inspecting HTTP Response Headers...')
-try:
-    req = urllib.request.Request(target_url, method='HEAD')
-    with urllib.request.urlopen(req, timeout=10) as resp:
-        print(f'  Status Code: {resp.status} {resp.reason}')
-        headers = {k.lower(): v for k, v in resp.headers.items()}
-        
-        print('\n  Observed Headers:')
-        for k, v in resp.headers.items():
-            print(f'    {k}: {v}')
-
-        print('\n[+] Evaluating Standard Security Headers:')
-        sec_headers = {
-            'content-security-policy': 'Mitigates Cross-Site Scripting (XSS)',
-            'strict-transport-security': 'Enforces HTTPS connections (HSTS)',
-            'x-frame-options': 'Protects against Clickjacking attacks',
-            'x-content-type-options': 'Prevents MIME-type sniffing',
-            'referrer-policy': 'Controls HTTP referrer information exposure',
-            'permissions-policy': 'Restricts browser feature usage'
-        }
-
-        for header, desc in sec_headers.items():
-            if header in headers:
-                print(f'  [PASS] {header}: {headers[header]}')
-            else:
-                print(f'  [MISSING] {header} ({desc})')
-
-except Exception as e:
-    print(f'  [!] Failed to query headers: {e}')
-
-print('\n[+] Inspecting Public Configuration Files...')
-for path in ['/robots.txt', '/sitemap.xml']:
-    file_url = target_url.rstrip('/') + path
-    try:
-        req = urllib.request.Request(file_url)
-        with urllib.request.urlopen(req, timeout=5) as resp:
-            content = resp.read().decode('utf-8', errors='ignore')
-            print(f'\n  [FOUND] {path} (HTTP {resp.status}, {len(content)} bytes):')
-            lines = content.splitlines()[:15]
-            for line in lines:
-                print(f'    | {line}')
-            if len(content.splitlines()) > 15:
-                print('    | ... (truncated)')
-    except urllib.error.HTTPError as e:
-        print(f'  [NOT FOUND] {path} (HTTP {e.code})')
-    except Exception as e:
-        print(f'  [ERR] {path}: {e}')
-
-print('\n========================================================')
-print('  Audit Complete.')
-print('========================================================')
-" | tee "$LOG_FILE" | tee "$LATEST_LOG"
+echo "Sending prompt to Agent Zero session via API client (send_agent_prompt.py)..."
+python3 send_agent_prompt.py "$PROMPT" "http://localhost:50001" 2>&1 | tee "$LOG_FILE" | tee "$LATEST_LOG"
 
