@@ -13,10 +13,10 @@ help:
 	@echo ""
 
 run:
-	./run.sh
+	bash ./run.sh
 
 ollama:
-	./ollama.sh
+	bash ./ollama.sh
 
 attack:
-	./attack.sh
+	bash ./attack.sh
