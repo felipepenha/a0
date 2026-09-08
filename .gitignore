@@ -6,3 +6,14 @@ backup/
 logs/
 usr/
 .DS_Store
+
+# Agent Zero Skills
+!usr/skills/**/*.md
+!usr/skills/**/*.py
+!usr/skills/**/*.sh
+!usr/skills/**/*.json
+
+!usr/projects/**/.a0proj/skills/**/*.md
+!usr/projects/**/.a0proj/skills/**/*.py
+!usr/projects/**/.a0proj/skills/**/*.sh
+!usr/projects/**/.a0proj/skills/**/*.json
