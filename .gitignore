@@ -1,19 +1,60 @@
-backup
+# OS and Build artifacts
+.DS_Store
 *.zip
-.env
-docs/
+*.egg-info/
+__pycache__/
+*.pyc
+.venv/
+
+# Backups and logs
 backup/
 logs/
-usr/
-.DS_Store
+docs/
 
-# Agent Zero Skills
-!usr/skills/**/*.md
-!usr/skills/**/*.py
-!usr/skills/**/*.sh
-!usr/skills/**/*.json
+# Universal secret denies (applies recursively everywhere)
+**/*.env
+**/*.env.*
+**/*secret*
+**/*secrets*
+**/*.key
+**/*.pem
+**/*.token
 
-!usr/projects/**/.a0proj/skills/**/*.md
-!usr/projects/**/.a0proj/skills/**/*.py
-!usr/projects/**/.a0proj/skills/**/*.sh
-!usr/projects/**/.a0proj/skills/**/*.json
+# -------------------------------------------------------------
+# Agent Zero User Data Isolation (usr/)
+# -------------------------------------------------------------
+# 1. Ignore EVERYTHING in usr/ by default
+usr/*
+
+# 2. Whitelist ONLY the skills directory trees
+!usr/skills/
+!usr/projects/
+!usr/projects/*/
+
+# Inside each project directory, ignore everything except .a0proj
+usr/projects/*/*
+!usr/projects/*/.a0proj/
+
+# Inside .a0proj, ignore everything except skills
+usr/projects/*/.a0proj/*
+!usr/projects/*/.a0proj/skills/
+
+# 3. Explicit Hard-Blocks on all Agent Zero state, memory, and chat history
+usr/chats/
+usr/memory/
+usr/workdir/
+usr/uploads/
+usr/downloads/
+usr/plugins/
+usr/scheduler/
+usr/agents/
+usr/knowledge/
+usr/.time_travel/
+usr/settings.json
+usr/update-check-state.json
+**/memory/
+**/chats/
+**/plugins/
+**/mcp_servers.json
+**/agents.json
+**/project.json
